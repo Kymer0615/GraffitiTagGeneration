@@ -1,0 +1,30 @@
+from matplotlib import pyplot as plt
+
+from Util.generator import Generator
+from textInputGenerator import TextInputGenerator
+from Util import config
+from Util.utils import load_checkpoint, reverseNormalization
+
+
+class graffTagGenerate():
+    def __init__(self, tag):
+        self.tag = tag
+        g = TextInputGenerator(self.tag)
+        g.gen_text()
+        self.text = g.get_text_image()
+        # Has to be in the form of batches here
+        self.text = config.transforms(image=self.text)['image'].reshape([1, 1, 256, 256])
+        self.genG = Generator(img_channels=1, num_residuals=9).to(config.DEVICE)
+        load_checkpoint(config.CHECKPOINT_GEN_G, model=self.genG)
+        self.tag = reverseNormalization(self.genG(self.text),0.5,0.5)
+        # Reshape to the numpy form
+        plt.imshow(self.tag.detach().numpy().reshape([256,256]))
+        plt.show()
+
+
+def main():
+    a = graffTagGenerate("word")
+
+if __name__ == "__main__":
+    main()
+
